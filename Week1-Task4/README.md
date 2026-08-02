@@ -248,6 +248,46 @@ Tested endpoints:
 
 ---
 
+# Postman Collection
+
+The Postman collection is available in:
+
+```
+postman/NotesApi.postman_collection.json
+```
+
+## Tested Endpoints
+
+### GET
+
+- Get all notes
+- Get note by ID
+- Invalid ID
+- Note not found
+- Empty list
+
+### POST
+
+- Create note
+- Missing title
+- Invalid data type
+
+### PUT
+
+- Update note
+- Note not found
+- Missing content
+
+### DELETE
+
+- Delete note
+- Already deleted
+- Note not found
+
+### Invalid Route
+
+- GET /randomRoute
+
 ## 🔮 Future Improvements
 
 - MongoDB integration
