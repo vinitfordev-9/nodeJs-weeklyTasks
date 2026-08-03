@@ -1,0 +1,52 @@
+Task 3 – PostgreSQL vs MySQL Comparison
+
+Objective
+
+The same e-commerce database schema and SQL queries were implemented in
+both PostgreSQL and MySQL to understand the similarities and differences
+between the two database systems.
+
+1. Auto Increment
+
+PostgreSQL user_id SERIAL PRIMARY KEY;
+
+MySQL user_id INT AUTO_INCREMENT PRIMARY KEY;
+
+Difference: PostgreSQL uses SERIAL while MySQL uses AUTO_INCREMENT to
+generate sequential primary key values.
+
+2. Transaction Syntax
+
+PostgreSQL BEGIN; ... COMMIT;
+
+MySQL START TRANSACTION; ... COMMIT;
+
+Difference: PostgreSQL commonly uses BEGIN, while MySQL documentation
+typically uses START TRANSACTION.
+
+3. Case-Insensitive Search
+
+PostgreSQL SELECT * FROM users WHERE name ILIKE 'vinit';
+
+MySQL SELECT * FROM users WHERE LOWER(name)=LOWER('vinit');
+
+Difference: PostgreSQL supports ILIKE; MySQL typically uses LOWER() or a
+case-insensitive collation.
+
+4. String Concatenation
+
+PostgreSQL SELECT name || ' - ' || email FROM users;
+
+MySQL SELECT CONCAT(name, ' - ', email) FROM users;
+
+Difference: PostgreSQL uses the || operator, while MySQL uses the
+CONCAT() function.
+
+Conclusion
+
+The same schema and SQL queries were successfully executed in both
+PostgreSQL and MySQL. Most SQL features behaved similarly, while the
+main differences were auto-increment syntax, transaction syntax,
+case-insensitive searching, and string concatenation. Understanding
+these differences is useful when switching between database systems or
+using ORMs in real-world applications.
