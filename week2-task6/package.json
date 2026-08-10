@@ -1,0 +1,35 @@
+{
+  "name": "week2-task6",
+  "version": "1.0.0",
+  "description": "E-commerce REST API using Express, TypeScript, TypeORM repositories, and SQLite",
+  "main": "dist/src/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/src/server.js",
+    "dev": "tsx watch src/server.ts",
+    "typeorm": "typeorm-ts-node-commonjs -d src/data-source.ts",
+    "migration:generate": "npm run typeorm -- migration:generate src/migrations/SchemaUpdate",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "test": "node --import tsx --test test/**/*.test.ts"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "joi": "^18.2.3",
+    "reflect-metadata": "^0.2.2",
+    "sql.js": "^1.13.0",
+    "typeorm": "^0.3.26"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0",
+    "@types/sql.js": "^1.4.9",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
