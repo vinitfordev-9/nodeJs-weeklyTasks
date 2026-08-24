@@ -18,3 +18,7 @@ function validateNote(req, res, next) {
 }
 
 module.exports = validateNote;
+
+
+//try to use joi method for others
+//hardcodes status n=dont add read from packages

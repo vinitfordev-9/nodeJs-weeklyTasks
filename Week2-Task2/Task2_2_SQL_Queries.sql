@@ -93,3 +93,5 @@ SELECT
 FROM orders
 ORDER BY total_amount DESC
 LIMIT 3;
+
+-- multiple ways to write the query and fetch the data.

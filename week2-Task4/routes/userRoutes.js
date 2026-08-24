@@ -12,3 +12,5 @@ router.put("/users/:id", validateUser, userController.updateUser);
 router.delete("/users/:id", userController.deleteUser);
 
 module.exports = router;
+
+//patch method implement

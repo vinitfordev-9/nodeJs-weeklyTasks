@@ -10,13 +10,13 @@ const errorHandler = require("./middleware/errorHandler");
 app.use(express.json());
 app.use(logger);
 
+app.get("/", (req, res) => {
+  console.log("testing");
+  res.send("Notes API is running...");
+});
 app.use(noteRoutes);
 app.use(notFound);
 app.use(errorHandler);
-
-app.get("/", (req, res) => {
-  res.send("Notes API is running...");
-});
 
 const PORT = 3000;
 

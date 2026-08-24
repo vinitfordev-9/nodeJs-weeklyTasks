@@ -56,3 +56,6 @@ model OrderItem {
 
   @@map("order_items")
 }
+
+
+//indexes add database table column,retrive the data faster.

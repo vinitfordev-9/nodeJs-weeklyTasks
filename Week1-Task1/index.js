@@ -30,3 +30,7 @@ async function main() {
   console.log(summary);
 }
 main();
+
+
+//use Import instead of require
+//read file synchronus and asynchrnous way

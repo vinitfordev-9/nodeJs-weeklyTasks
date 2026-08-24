@@ -140,3 +140,5 @@ SELECT
 FROM orders
 ORDER BY total_amount DESC
 LIMIT 3;
+
+--store procedure learn.Normalization

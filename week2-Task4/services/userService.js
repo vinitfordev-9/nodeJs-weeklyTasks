@@ -1,11 +1,12 @@
 const prisma = require("../config/prisma");
 
 async function getAllUsers() {
-  return prisma.user.findMany({
-    include: {
-      orders: true,
-    },
-  });
+  // return prisma.user.findMany({
+  //   include: {
+  //     orders: true,
+  //   },
+  // });
+  return prisma.user.findMany();
 }
 
 async function getUserById(id) {

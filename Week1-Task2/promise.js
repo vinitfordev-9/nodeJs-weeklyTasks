@@ -24,3 +24,6 @@ myMap(numbers, (num) => num * 2)
   .catch((error) => {
     console.log(error);
   });
+
+//promise chaining
+//differnt types of promises
