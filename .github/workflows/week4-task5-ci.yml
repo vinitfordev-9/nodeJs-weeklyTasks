@@ -1,0 +1,74 @@
+name: Week 4 Task 5 CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: week4-task5-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Task 5 lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: week4-task5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: week4-task5/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    name: Task 5 tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: week4-task5
+    env:
+      NODE_ENV: test
+      LOG_LEVEL: silent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: week4-task5/package-lock.json
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run test:ci
+      - name: Save coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: task5-coverage
+          path: week4-task5/coverage/
+          if-no-files-found: warn
+          retention-days: 14
+
+  docker:
+    name: Task 5 Docker build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build application image
+        run: docker build --target runtime --tag week4-task5:${{ github.sha }} ./week4-task5
+      - name: Build migration image
+        run: docker build --target migrate --tag week4-task5-migrate:${{ github.sha }} ./week4-task5
