@@ -23,5 +23,10 @@ For local Compose, copy `.env.example` to `.env`, replace its credential placeho
 then run `docker compose up --build -d`. Compose uses separate API and worker
 containers; the cloud startup process is only used by the cloud Dockerfile target.
 
-Cloud deployment is not yet live. A Render account connection and deployment are
-required before an actual public URL can be provided and verified.
+- [Live application UI](https://week4-task6-api.onrender.com/live/) — log in and view live order notifications.
+- [API status endpoint](https://week4-task6-api.onrender.com/) — displays “E-commerce API is running...” to confirm the server responds.
+
+Both links belong to the same deployed application.
+
+Public GET `/` verified with HTTP 200 on 2026-09-28. See
+[DELIVERABLES.md](DELIVERABLES.md) for the response and submission links.
