@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
+import { RESPONSES, sendResponse } from '../common/responses.js';
+import { validate, requireJson } from '../common/validation.js';
+import { authenticate } from '../middleware/auth.js';
+import { registerSchema, loginSchema } from './auth.validation.js';
+import * as controller from './auth.controller.js';
+const limit = rateLimit({ windowMs: 900000, limit: 40, skip: () => process.env.NODE_ENV === 'test', handler: (req, res) => sendResponse(res, RESPONSES.RATE) });
+export const authRouter = Router();
+authRouter.post('/register', limit, requireJson, validate(registerSchema), controller.register);
+authRouter.post('/login', limit, requireJson, validate(loginSchema), controller.login);
+authRouter.get('/me', authenticate, controller.me);
+authRouter.post('/logout', authenticate, controller.logout);

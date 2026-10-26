@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+}
+enum Role {
+  candidate
+  company
+}
+enum JobType {
+  full_time
+  part_time
+  contract
+  internship
+}
+enum WorkMode {
+  onsite
+  hybrid
+  remote
+}
+enum JobStatus {
+  open
+  closed
+}
+enum ApplicationStatus {
+  submitted
+  reviewing
+  shortlisted
+  rejected
+}
+model User {
+  id           String @id @default(uuid()) @db.Uuid
+  name         String @db.VarChar(100)
+  email        String @unique @db.VarChar(254)
+  passwordHash String
+  role         Role
+  companyName  String? @db.VarChar(100)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  sessions     Session[]
+  jobs         Job[]
+  applications Application[]
+  @@map("users")
+}
+model Session {
+  id        String @id @default(uuid()) @db.Uuid
+  tokenHash String @unique
+  userId    String @db.Uuid
+  expiresAt DateTime @db.Timestamptz(3)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("sessions")
+}
+model Job {
+  id           String @id @default(uuid()) @db.Uuid
+  companyId    String @db.Uuid
+  title        String @db.VarChar(150)
+  location     String @db.VarChar(150)
+  description  String @db.Text
+  requirements String @db.Text
+  tags         String[]
+  type         JobType @default(full_time)
+  workMode     WorkMode @default(hybrid)
+  salaryMin    Int?
+  salaryMax    Int?
+  currency     String @default("INR") @db.VarChar(3)
+  status       JobStatus @default(open)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+  company      User @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  applications Application[]
+  @@index([companyId, createdAt])
+  @@index([status, createdAt])
+  @@index([tags], type: Gin)
+  @@map("jobs")
+}
+model Application {
+  id            String @id @default(uuid()) @db.Uuid
+  jobId         String @db.Uuid
+  candidateId   String @db.Uuid
+  coverLetter   String? @db.VarChar(3000)
+  resumeName    String @db.VarChar(200)
+  resumeBytes   Bytes
+  resumeSize    Int
+  status        ApplicationStatus @default(submitted)
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+  job           Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate     User @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  @@unique([jobId, candidateId])
+  @@index([candidateId, createdAt])
+  @@map("applications")
+}

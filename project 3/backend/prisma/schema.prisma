@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+}
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(80)
+  handle String @unique @db.VarChar(30)
+  email String @unique @db.VarChar(254)
+  passwordHash String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  sessions Session[]
+  memberships Membership[]
+  messages Message[]
+  receipts ReadReceipt[]
+  notifications Notification[]
+  @@map("users")
+}
+model Session {
+  id String @id @default(uuid()) @db.Uuid
+  tokenHash String @unique
+  userId String @db.Uuid
+  expiresAt DateTime @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("sessions")
+}
+model Room {
+  id String @id @default(uuid()) @db.Uuid
+  name String @unique @db.VarChar(50)
+  description String @db.VarChar(250)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  memberships Membership[]
+  messages Message[]
+  @@map("rooms")
+}
+model Membership {
+  userId String @db.Uuid
+  roomId String @db.Uuid
+  joinedAt DateTime @default(now()) @db.Timestamptz(3)
+  active Boolean @default(true)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  @@id([userId, roomId])
+  @@index([roomId, active])
+  @@map("memberships")
+}
+model Message {
+  id String @id @default(uuid()) @db.Uuid
+  sequence BigInt @unique @default(autoincrement())
+  roomId String @db.Uuid
+  authorId String @db.Uuid
+  clientMessageId String @db.Uuid
+  content String @db.VarChar(4000)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  receipts ReadReceipt[]
+  notifications Notification[]
+  @@unique([roomId, authorId, clientMessageId])
+  @@index([roomId, sequence])
+  @@map("messages")
+}
+model ReadReceipt {
+  messageId String @db.Uuid
+  userId String @db.Uuid
+  readAt DateTime @default(now()) @db.Timestamptz(3)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([messageId, userId])
+  @@map("read_receipts")
+}
+model Notification {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  messageId String @db.Uuid
+  read Boolean @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  @@unique([userId, messageId])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+model Outbox {
+  id String @id @default(uuid()) @db.Uuid
+  target String
+  event String
+  payload Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  deliveredAt DateTime? @db.Timestamptz(3)
+  @@index([deliveredAt, createdAt])
+  @@map("outbox")
+}

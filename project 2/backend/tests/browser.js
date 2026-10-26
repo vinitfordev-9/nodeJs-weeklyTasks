@@ -1,0 +1,96 @@
+import { chromium } from 'playwright';
+import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
+import dotenv from 'dotenv';
+import { once } from 'node:events';
+dotenv.config({ path: '.env.test', override: true, quiet: true });
+if (new URL(process.env.DATABASE_URL).pathname !== '/project_2_test_db') throw new Error('Browser tests must use project_2_test_db.');
+const { app } = await import('../src/app.js');
+const { prisma } = await import('../src/config/database.js');
+const server = app.listen(0, '127.0.0.1');
+await once(server, 'listening');
+const base = `http://127.0.0.1:${server.address().port}`;
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
+const companyContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+const candidateContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+const company = await companyContext.newPage();
+const candidate = await candidateContext.newPage();
+company.setDefaultTimeout(15000); candidate.setDefaultTimeout(15000);
+const errors = [];
+for (const page of [company, candidate]) { page.on('pageerror', error => errors.push(error.message)); }
+await mkdir('test-results', { recursive: true });
+async function register(page, role) {
+  await page.goto(base);
+  await page.getByRole('button', { name: 'Get started' }).click();
+  await page.getByLabel('Your name', { exact: true }).fill(`UI ${role}`);
+  await page.getByLabel('I’m here to').selectOption(role);
+  if (role === 'company') await page.getByLabel('Company name', { exact: true }).fill('UI Test Studio');
+  await page.getByLabel('Email address', { exact: true }).fill(`ui-${role}@test.dev`);
+  await page.getByLabel('Password', { exact: true }).fill('TestingPass123!');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await page.getByRole('button', { name: 'Sign out', exact: true }).waitFor();
+}
+try {
+  await prisma.application.deleteMany(); await prisma.job.deleteMany(); await prisma.user.deleteMany();
+  await register(company, 'company');
+  console.log('Company registered');
+  await company.getByRole('button', { name: '+ Post a job', exact: true }).click();
+  await company.getByLabel('Job title', { exact: true }).fill('UI Test Product Designer');
+  await company.getByLabel('Location', { exact: true }).fill('Bengaluru, India');
+  await company.getByLabel('About the role', { exact: true }).fill('Help a thoughtful team create accessible products with beautiful interfaces.');
+  await company.getByLabel('What candidates should bring', { exact: true }).fill('Strong design skills and a collaborative approach.');
+  await company.getByLabel('Skills & tags').fill('design, figma');
+  await company.getByRole('button', { name: 'Publish opportunity' }).click();
+  console.log('Publish submitted');
+  await company.getByRole('cell', { name: 'UI Test Product Designer' }).waitFor();
+  await register(candidate, 'candidate');
+  await candidate.locator('.job-card').first().waitFor();
+  await candidate.screenshot({ path: 'test-results/desktop.png', fullPage: true });
+  await candidate.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await candidate.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Mobile must not overflow horizontally');
+  await candidate.screenshot({ path: 'test-results/mobile.png', fullPage: true });
+  await candidate.setViewportSize({ width: 1440, height: 1000 });
+
+  await candidate.getByRole('textbox', { name: 'Job title', exact: true }).fill('UI Test');
+  await candidate.getByRole('button', { name: 'Find opportunities' }).click();
+  await candidate.getByRole('button', { name: 'UI Test Product Designer', exact: true }).click();
+  await candidate.getByRole('button', { name: 'Apply for this role' }).click();
+  await candidate.getByLabel('Upload PDF resume').setInputFiles('../postman/sample-resume.pdf');
+  await candidate.getByRole('button', { name: 'Send application' }).click();
+  await candidate.getByRole('heading', { name: 'You’re in the running.' }).waitFor();
+  await candidate.getByRole('button', { name: 'View my applications' }).click();
+  await candidate.locator('.application-card').waitFor();
+  assert.match(await candidate.locator('.application-card').innerText(), /submitted/);
+  await company.getByRole('button', { name: 'Company workspace', exact: true }).click();
+  await company.getByRole('button', { name: '1 applicants' }).click();
+  await company.getByLabel('Review status').selectOption('shortlisted');
+  await company.waitForFunction(() => document.querySelector('[data-status-id]')?.dataset.previous === 'shortlisted');
+  const downloadPromise = company.waitForEvent('download');
+  await company.getByRole('button', { name: 'Download resume' }).click();
+  assert.equal((await downloadPromise).suggestedFilename(), 'resume.pdf');
+  await company.screenshot({ path: 'test-results/applicants.png', fullPage: true });
+  await candidate.getByRole('button', { name: 'My applications', exact: true }).click();
+  await candidate.locator('.pill.shortlisted').waitFor();
+  await company.getByRole('button', { name: 'Close dialog' }).click();
+  await company.getByRole('button', { name: 'Edit', exact: true }).click();
+  await company.getByLabel('Job title', { exact: true }).fill('Updated UI Product Designer');
+  await company.getByRole('button', { name: 'Save changes' }).click();
+  await company.getByRole('cell', { name: 'Updated UI Product Designer' }).waitFor();
+  await company.getByRole('button', { name: 'Delete', exact: true }).click();
+  await company.getByRole('button', { name: 'Delete permanently' }).click();
+  await company.getByRole('heading', { name: 'Make room for someone great.' }).waitFor();
+  await company.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await company.getByRole('button', { name: 'Sign in', exact: true }).waitFor();
+  assert.deepEqual(errors, [], 'No browser runtime errors');
+  console.log('Browser checks passed: responsive layout, registration, job CRUD, search, PDF application, company review, status tracking, private download, and sign-out.');
+} catch (error) {
+  await company.screenshot({ path: 'test-results/failure-company.png', fullPage: true });
+  await candidate.screenshot({ path: 'test-results/failure-candidate.png', fullPage: true });
+  console.error('Company page:', await company.locator('body').innerText());
+  throw error;
+} finally {
+  await browser.close();
+  await new Promise(resolve => server.close(resolve));
+  await prisma.application.deleteMany(); await prisma.job.deleteMany(); await prisma.user.deleteMany();
+  await prisma.$disconnect();
+}

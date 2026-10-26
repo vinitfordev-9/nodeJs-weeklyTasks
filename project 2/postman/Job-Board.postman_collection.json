@@ -1,0 +1,854 @@
+{
+  "info": {
+    "name": "Project 2 - Role & Co Job Board",
+    "description": "Run in order. Registers a company and candidate, captures tokens and IDs, publishes and applies, tests permissions, then deletes the test job. Select the supplied PDF for requests 08 and 09. Uses localhost:3002.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3002"
+    },
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "companyToken",
+      "value": ""
+    },
+    {
+      "key": "candidateToken",
+      "value": ""
+    },
+    {
+      "key": "jobId",
+      "value": ""
+    },
+    {
+      "key": "applicationId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('SERVICE_HEALTHY'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Register company",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Recruiter\",\n  \"email\": \"company-{{runId}}@example.test\",\n  \"password\": \"PostmanPass123!\",\n  \"role\": \"company\",\n  \"companyName\": \"Postman Studio\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('runId', Date.now() + '-' + Math.floor(Math.random() * 100000));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('ACCOUNT_CREATED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('companyToken', body.data.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Register candidate",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Candidate\",\n  \"email\": \"candidate-{{runId}}@example.test\",\n  \"password\": \"PostmanPass123!\",\n  \"role\": \"candidate\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('ACCOUNT_CREATED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('candidateToken', body.data.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Publish job",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/jobs",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{companyToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Frontend Engineer - Postman\",\n  \"location\": \"Bengaluru, India\",\n  \"description\": \"Build accessible interfaces with a thoughtful product team. Work on meaningful problems and own your projects.\",\n  \"requirements\": \"Experience with JavaScript, React, and collaborative development.\",\n  \"tags\": [\n    \"react\",\n    \"typescript\"\n  ],\n  \"workMode\": \"hybrid\",\n  \"type\": \"full_time\",\n  \"salaryMin\": 1200000,\n  \"salaryMax\": 2000000,\n  \"currency\": \"INR\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('JOB_CREATED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('jobId', body.data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Search and filter",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/jobs?q=Frontend&location=Bengaluru&tags=react&type=full_time&sortBy=newest&page=1&limit=5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('JOBS_RETRIEVED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Get job",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/jobs/{{jobId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('JOB_RETRIEVED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Update job",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/jobs/{{jobId}}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{companyToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Senior Frontend Engineer - Postman\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('JOB_UPDATED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Apply with PDF",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/api/jobs/{{jobId}}/applications",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "resume",
+              "type": "file",
+              "src": "sample-resume.pdf"
+            },
+            {
+              "key": "coverLetter",
+              "type": "text",
+              "value": "I enjoy building thoughtful, accessible products."
+            }
+          ]
+        },
+        "description": "Select project 2/postman/sample-resume.pdf in Body > form-data > resume. Leave Content-Type automatic; Postman adds the multipart boundary."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('APPLICATION_SUBMITTED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('applicationId', body.data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Duplicate application fails",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/api/jobs/{{jobId}}/applications",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "resume",
+              "type": "file",
+              "src": "sample-resume.pdf"
+            },
+            {
+              "key": "coverLetter",
+              "type": "text",
+              "value": "I enjoy building thoughtful, accessible products."
+            }
+          ]
+        },
+        "description": "Select project 2/postman/sample-resume.pdf in Body > form-data > resume. Leave Content-Type automatic; Postman adds the multipart boundary."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('ALREADY_APPLIED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 My applications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/applications/me",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('APPLICATIONS_RETRIEVED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Company job dashboard",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/company/jobs",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{companyToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('JOBS_RETRIEVED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 List job applicants",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/jobs/{{jobId}}/applications",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{companyToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('APPLICATIONS_RETRIEVED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 Download private resume",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/applications/{{applicationId}}/resume",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{companyToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('PDF response', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 Shortlist candidate",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/applications/{{applicationId}}/status",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{companyToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"shortlisted\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('APPLICATION_UPDATED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 Candidate cannot publish jobs",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/jobs",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Frontend Engineer - Postman\",\n  \"location\": \"Bengaluru, India\",\n  \"description\": \"Build accessible interfaces with a thoughtful product team. Work on meaningful problems and own your projects.\",\n  \"requirements\": \"Experience with JavaScript, React, and collaborative development.\",\n  \"tags\": [\n    \"react\",\n    \"typescript\"\n  ],\n  \"workMode\": \"hybrid\",\n  \"type\": \"full_time\",\n  \"salaryMin\": 1200000,\n  \"salaryMax\": 2000000,\n  \"currency\": \"INR\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('ACCESS_DENIED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 Invalid job ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/jobs/2"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('VALIDATION_ERROR'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 Invalid pagination",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/jobs?page=0"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('VALIDATION_ERROR'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 Close job",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/jobs/{{jobId}}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{companyToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"closed\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('JOB_UPDATED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 Delete test job",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/jobs/{{jobId}}",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{companyToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('JOB_DELETED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 Deleted job returns 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/jobs/{{jobId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('RESOURCE_NOT_FOUND'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "21 Sign out candidate",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/api/auth/logout",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('LOGOUT_SUCCESS'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "22 Revoked token fails",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/auth/me",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('AUTHENTICATION_REQUIRED'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "23 Sign out company",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/api/auth/logout",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{companyToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('LOGOUT_SUCCESS'));",
+              "pm.test('Consistent envelope', () => pm.expect(body).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "project-2-job-board",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "start": "npm run build && npm run start --workspace backend",
+    "dev": "concurrently -k -n API,WEB \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "build": "npm run build --workspace frontend",
+    "test": "npm run build && npm run test --workspace backend",
+    "test:ui": "npm run build && npm run test:ui --workspace backend",
+    "db:generate": "npm run db:generate --workspace backend",
+    "db:migrate": "npm run db:migrate --workspace backend",
+    "db:seed": "npm run db:seed --workspace backend",
+    "format": "npm run format --workspace frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

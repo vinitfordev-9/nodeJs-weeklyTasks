@@ -1,0 +1,31 @@
+{
+  "name": "project-1-task-manager",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Single-user personal task manager REST API",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "db:generate": "XDG_CACHE_HOME=.cache prisma generate",
+    "db:migrate": "XDG_CACHE_HOME=.cache prisma migrate deploy",
+    "db:studio": "XDG_CACHE_HOME=.cache prisma studio",
+    "test": "node --test --test-concurrency=1 tests/*.test.js"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.9.1",
+    "@prisma/client": "7.9.1",
+    "dotenv": "17.4.2",
+    "express": "5.2.1",
+    "helmet": "8.1.0",
+    "pg": "8.22.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "prisma": "7.9.1",
+    "supertest": "7.1.4"
+  }
+}

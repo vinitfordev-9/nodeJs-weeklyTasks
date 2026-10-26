@@ -1,0 +1,352 @@
+{
+  "info": {
+    "name": "Project 1 - Personal Task Manager",
+    "description": "Run requests in order. Create saves taskId; delete removes the example task. All requests use a consistent JSON response.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3001"
+    },
+    {
+      "key": "taskId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('SERVICE_HEALTHY'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Create task (saves taskId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tasks",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Complete my backend project\",\n  \"description\": \"Implement and test the task API in Postman.\",\n  \"dueDate\": \"2026-12-01T18:00:00+05:30\",\n  \"priority\": \"high\",\n  \"status\": \"todo\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('TASK_CREATED'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('taskId', body.data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 List tasks",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/tasks?page=1&limit=10"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('TASKS_RETRIEVED'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Filter and sort",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/tasks?status=todo&priority=high&page=1&limit=5&sortBy=dueDate&sortOrder=asc"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('TASKS_RETRIEVED'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Get task",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('TASK_RETRIEVED'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Update task",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"in-progress\",\n  \"priority\": \"medium\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('TASK_UPDATED'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Mark done",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"done\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('TASK_UPDATED'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Invalid title",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tasks",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('VALIDATION_ERROR'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Invalid task ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/tasks/invalid-id"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('VALIDATION_ERROR'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Invalid pagination",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/tasks?page=0"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('VALIDATION_ERROR'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Delete task",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('TASK_DELETED'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Deleted task returns 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+              "const body = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(body.code).to.eql('TASK_NOT_FOUND'));",
+              "pm.test('Consistent response', () => pm.expect(body).to.have.all.keys('success', 'code', 'message', 'data', 'errors', 'meta'));",
+              "pm.test('Success flag', () => pm.expect(body.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

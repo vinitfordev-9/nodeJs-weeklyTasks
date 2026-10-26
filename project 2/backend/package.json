@@ -1,0 +1,34 @@
+{
+  "name": "job-board-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:generate": "XDG_CACHE_HOME=.cache prisma generate",
+    "db:migrate": "XDG_CACHE_HOME=.cache prisma migrate deploy",
+    "db:seed": "node prisma/seed.js",
+    "test": "node --test --test-concurrency=1 tests/api.test.js",
+    "test:ui": "node tests/browser.js"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.9.1",
+    "@prisma/client": "7.9.1",
+    "dotenv": "17.4.2",
+    "express": "5.2.1",
+    "helmet": "8.1.0",
+    "pg": "8.22.0",
+    "zod": "^4.3.6",
+    "multer": "^2.0.2",
+    "express-rate-limit": "^8.2.1"
+  },
+  "devDependencies": {
+    "prisma": "7.9.1",
+    "supertest": "7.1.4",
+    "playwright": "^1.56.1"
+  }
+}

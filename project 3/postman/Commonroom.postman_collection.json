@@ -1,0 +1,864 @@
+{
+  "info": {
+    "name": "Project 3 - Commonroom Chat",
+    "description": "Run 01\u201322 in order. Saves both tokens and room/message IDs for the Socket.IO examples. Registration and test rooms remain in the local demo DB. Message retries use the same clientMessageId. See SOCKET-IO.md for live events.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3003"
+    },
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "tokenA",
+      "value": ""
+    },
+    {
+      "key": "tokenB",
+      "value": ""
+    },
+    {
+      "key": "roomId",
+      "value": ""
+    },
+    {
+      "key": "messageId",
+      "value": ""
+    },
+    {
+      "key": "clientMessageId",
+      "value": ""
+    },
+    {
+      "key": "cursor",
+      "value": ""
+    },
+    {
+      "key": "notificationId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('SERVICE_HEALTHY'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Register Alex",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Alex\",\n  \"handle\": \"alex_{{runId}}\",\n  \"email\": \"alex-{{runId}}@example.test\",\n  \"password\": \"PostmanPass123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('runId', Date.now().toString());",
+              "pm.collectionVariables.set('clientMessageId', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('ACCOUNT_CREATED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('tokenA', result.data.token);",
+              "if (pm.response.code === 201) pm.collectionVariables.set('userA', result.data.user.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Register Mara",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Mara\",\n  \"handle\": \"mara_{{runId}}\",\n  \"email\": \"mara-{{runId}}@example.test\",\n  \"password\": \"PostmanPass123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('ACCOUNT_CREATED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('tokenB', result.data.token);",
+              "if (pm.response.code === 201) pm.collectionVariables.set('userB', result.data.user.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Sign in Alex",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"alex-{{runId}}@example.test\",\n  \"password\": \"PostmanPass123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('LOGIN_SUCCESS'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));",
+              "if (pm.response.code === 200) pm.collectionVariables.set('tokenA', result.data.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Create room",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/rooms",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenA}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"postman-{{runId}}\",\n  \"description\": \"A room for testing live conversations.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('ROOM_CREATED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('roomId', result.data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Non-member history denied",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/messages",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenB}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('ROOM_ACCESS_DENIED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Join as Mara",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/join",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenB}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('ROOM_JOINED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 List rooms",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/rooms?page=1&limit=50",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenA}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('ROOMS_RETRIEVED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Send message and mention Mara",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/messages",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenA}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"content\": \"Hello @mara_{{runId}}! A message worth keeping.\",\n  \"clientMessageId\": \"{{clientMessageId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('MESSAGE_SAVED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('messageId', result.data.id);",
+              "if (pm.response.code === 201) pm.collectionVariables.set('cursor', result.data.sequence);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Retry safely - same ID",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/messages",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenA}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"content\": \"Hello @mara_{{runId}}! A message worth keeping.\",\n  \"clientMessageId\": \"{{clientMessageId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('MESSAGE_SAVED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Fetch history",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/messages?limit=30",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenB}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('MESSAGES_RETRIEVED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Mark message read",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/read",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenB}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"messageIds\": [\n    \"{{messageId}}\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('MESSAGES_READ'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 History includes readers",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/messages",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenA}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('MESSAGES_RETRIEVED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 Mara mentions inbox",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/notifications",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenB}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('NOTIFICATIONS_RETRIEVED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));",
+              "if (pm.response.code === 200) pm.collectionVariables.set('notificationId', result.data[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 Mark mention read",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenB}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('NOTIFICATION_READ'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 Catch up after cursor",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/messages?after={{cursor}}&limit=30",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenA}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('MESSAGES_RETRIEVED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 Room members",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/members",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenA}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('MEMBERS_RETRIEVED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 Invalid message",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/messages",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenA}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"content\": \"\",\n  \"clientMessageId\": \"{{clientMessageId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('VALIDATION_ERROR'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 Leave as Mara",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/leave",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenB}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('ROOM_LEFT'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 History denied after leaving",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/messages",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenB}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('ROOM_ACCESS_DENIED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "21 Rejoin as Mara",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/api/rooms/{{roomId}}/join",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenB}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('ROOM_JOINED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "22 Profile",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/auth/me",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenA}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('Response code', () => pm.expect(result.code).to.eql('PROFILE_RETRIEVED'));",
+              "pm.test('Response shape', () => pm.expect(result).to.have.all.keys('success','code','message','data','errors','meta'));",
+              "pm.test('Success flag', () => pm.expect(result.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

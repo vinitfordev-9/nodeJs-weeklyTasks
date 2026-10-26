@@ -9,7 +9,7 @@ const authorizeRoles = require("../middleware/authorizeRoles");
 
 const router = express.Router();
 
-router.use(authorizeRoles("ADMIN"));
+router.use("/users", authorizeRoles("ADMIN"));
 
 router.get("/users", userController.getAllUsers);
 router.get("/users/:id", userController.getUserById);
